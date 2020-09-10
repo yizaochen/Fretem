@@ -296,7 +296,7 @@ using LinearAlgebra, Statistics, SparseArrays, Arpack
     function get_coefficients_by_proj(w0, alpha, Qx, Nv)
         c_array = ones(Nv)
         temp = w0 .* alpha
-        for idx_eigv in 2:Nv
+        for idx_eigv in 1:Nv
             c_array[idx_eigv] = sum(temp .* Qx[:, idx_eigv])
         end
         return c_array
