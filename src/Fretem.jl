@@ -297,7 +297,7 @@ using LinearAlgebra, Statistics, SparseArrays, Arpack
 
         # Normalize
         for i=2:Nv
-            Qx[:,i] = Qx[:,i] ./ sum(w0 .* Qx[:,i] .* Qx[:,i])
+            Qx[:,i] = Qx[:,i] ./ sqrt(sum(w0 .* Qx[:,i] .* Qx[:,i]))
         end
         return LQ, Qx, rho_eq
     end
