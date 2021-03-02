@@ -254,8 +254,55 @@ using LinearAlgebra, Statistics, SparseArrays, Arpack
         return LQ, Qx
     end
 
-
     function fem_solve_eigen_by_pref(Nh, Np, xratio, xavg, pref, D, Nv)
+        N, xref, w0, Ldx, w = get_fem_xref_weights_basis(Nh, Np, xratio, xavg)
+        D_array = D .* ones(size(xref))
+
+        ## Hamiltonian Matrix K
+        Ke = spzeros(N, N) # Sparse Array allocate
+         
+        for k=0:Nh-1
+            idx_array = 1+k*(Np-1):k*(Np-1)+Np
+            temp_diag = Diagonal(D_array[idx_array] .* w .* pref[idx_array])
+            temp_mat = Ldx' * temp_diag * Ldx
+            Ke[idx_array, idx_array] = Ke[idx_array, idx_array] .+ temp_mat
+        end
+        
+        # Overlap Matrix S
+        temp = w0 .* pref
+        Se = spdiagm(0 => vec(temp))
+
+        # Sparse to dense
+        Ke_dense = Array(Ke)
+        Se_dense = Array(Se)
+        
+        # Find Eigenvalue and eigenvector
+        F = eigen(Ke_dense, Se_dense)
+        LQ = F.values
+        Q = F.vectors
+        
+        # Process Eigenvalues and Eigenvectors
+        LQ = real.(LQ) # Get real part of eigenvalues
+        iLQ = sortperm(LQ) # iLQ: index of sorted eigenvalues
+        LQ = LQ[iLQ]
+        LQ[1] = 0
+        Q = Q[:, iLQ] # Sorted eigenvectors by index
+        Q = real.(Q)  # Eq.(36)
+        
+        # We want the true eigenvector of Eq.(33), which we name as Qx
+        Qx = Q[:, 1:Nv]
+        rho_eq = pref .^ (1/2) # p_eq^(1/2)
+        rho_eq_diag_mat = spdiagm(0 => vec(rho_eq))
+        Qx = rho_eq_diag_mat * Qx # Psi, Eq. (35)
+
+        # Normalize
+        for i=2:Nv
+            Qx[:,i] = Qx[:,i] ./ sum(w0 .* Qx[:,i] .* Qx[:,i])
+        end
+        return LQ, Qx, rho_eq
+    end
+
+    function fem_solve_eigen_by_pref_old(Nh, Np, xratio, xavg, pref, D, Nv)
         N, xref, w0, Ldx, w = get_fem_xref_weights_basis(Nh, Np, xratio, xavg)
         D_array = D .* ones(size(xref))
 
