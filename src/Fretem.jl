@@ -288,6 +288,8 @@ using LinearAlgebra, Statistics, SparseArrays, Arpack
         LQ[1] = 0
         Q = Q[:, iLQ] # Sorted eigenvectors by index
         Q = real.(Q)  # Eq.(36)
+
+        LQ = LQ[1:Nv]
         
         # We want the true eigenvector of Eq.(33), which we name as Qx
         Qx = Q[:, 1:Nv]
